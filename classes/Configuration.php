@@ -308,6 +308,56 @@ class ConfigurationCore extends ObjectModel
     // @codingStandardsIgnoreEnd
 
     /**
+     * Test and fix necessary installations. This may be called at any time,
+     * during installation time, at version update time or, in rare cases,
+     * during normal runtime.
+     *
+     * @param array $messages An array with message arrays. Like:
+     *                        [
+     *                            'errors'        => [],
+     *                            'warnings'      => [],
+     *                            'informations'  => [],
+     *                            'confirmations' => [],
+     *                        ]
+     *                        Calling code may consider a returned non-empty
+     *                        errors array as failure of operations.
+     * @param bool  $autofix  Whether to fix issues as much as possible. Issues
+     *                        found with $autofix = false may return an error.
+     *                        With $autofix = true, missing configurations get
+     *                        inserted with default values.
+     * @since   1.1.0
+     */
+    public static function installationCheck(array @$messages, $autofix = true)
+    {
+        // $defaultsGlobal              ... (yet to implement)
+        $defaultsMultiShop = [
+            'TB_MAIL_SUBJECT_TEMPLATE' => '[{shop_name}] {subject}',
+        ];
+        // $defaultsMultiLang           ... (yet to implement)
+        // $defaultsMultiShopMultiLang  ... (yet to implement)
+
+        $oldShopContext = Shop::getContext();
+        foreach (Shop::getShops() as $shop) {
+            Shop::setContext($shop);
+            foreach ($defaultsMultiShop as $key => $value) {
+                if ( ! Configuration::get($key)) {
+                    if ($autofix) {
+                        Configuration::updateValue($key, $value);
+                        $messages['informations'][] =
+                            sprintf('Configuration %s in shop %s initialized to "%s".',
+                                    $key, $shop, $value);
+                    } else {
+                        $messages['errors'][] =
+                            sprintf('Configuration %s missing in shop %s.',
+                                    $key, $shop);
+                    }
+                }
+            }
+        }
+        Shop::setContext($oldShopContext);
+    }
+
+    /**
      * @return bool|null
      *
      * @since   1.0.0
