@@ -47,6 +47,10 @@ class ShopMaintenanceCore
             static::optinShop();
             static::cleanAdminControllerMessages();
 
+            // Until we have a module supporting state driven updates,
+            // let's run this here:
+            Configuration::installationCheck([]);
+
             Configuration::updateGlobalValue('SHOP_MAINTENANCE_LAST_RUN', $now);
         }
     }
